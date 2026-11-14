@@ -44,25 +44,27 @@ fi
 
 # Seed the admin account once per volume. The generated password comes from
 # the template variable; changing it later does NOT reset the admin password
-# (setup only runs while no users exist).
-case "$SERVER_JSON" in
-    *initialSetupRequired*true*)
-        if [ -z "${COMMAFEED_ADMIN_PASSWORD:-}" ]; then
-            echo "entrypoint: initial setup required but COMMAFEED_ADMIN_PASSWORD is not set — failing loud"
-            kill "$APP_PID" 2>/dev/null || true
-            exit 1
-        fi
-        echo "entrypoint: seeding initial admin account"
-        curl -fsS --max-time 10 -X POST "${BASE_URL}/rest/user/initialSetup" \
-            -H 'Content-Type: application/json' \
-            -d "{\"name\":\"admin\",\"password\":\"${COMMAFEED_ADMIN_PASSWORD}\"}" \
-            >/dev/null
-        echo "entrypoint: admin account seeded"
-        ;;
-    *)
-        echo "entrypoint: initial setup already completed, skipping admin seed"
-        ;;
-esac
+# (setup only runs while no users exist). Match the exact compact-JSON token
+# "initialSetupRequired":true — a loose glob would also match later "true"
+# fields (e.g. pushNotificationsEnabled) and re-seed on every boot.
+if printf '%s' "$SERVER_JSON" | grep -Fq '"initialSetupRequired":true'; then
+    if [ -z "${COMMAFEED_ADMIN_PASSWORD:-}" ]; then
+        echo "entrypoint: initial setup required but COMMAFEED_ADMIN_PASSWORD is not set — failing loud"
+        kill "$APP_PID" 2>/dev/null || true
+        exit 1
+    fi
+    echo "entrypoint: seeding initial admin account"
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 -X POST "${BASE_URL}/rest/user/initialSetup" \
+        -H 'Content-Type: application/json' \
+        -d "{\"name\":\"admin\",\"password\":\"${COMMAFEED_ADMIN_PASSWORD}\"}")
+    case "$HTTP_CODE" in
+        200) echo "entrypoint: admin account seeded" ;;
+        400) echo "entrypoint: initial setup already completed (400), continuing" ;;
+        *) echo "entrypoint: initial setup failed with HTTP $HTTP_CODE — failing loud"; kill "$APP_PID" 2>/dev/null || true; exit 1 ;;
+    esac
+else
+    echo "entrypoint: initial setup already completed, skipping admin seed"
+fi
 
 # Hand the container over to the app process.
 wait "$APP_PID"
