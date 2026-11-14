@@ -21,11 +21,13 @@ set -e
 export QUARKUS_HTTP_PORT="${PORT:-8082}"
 BASE_URL="http://127.0.0.1:${QUARKUS_HTTP_PORT}"
 
-# Start the app exactly as the stock image does (WORKDIR /commafeed).
-java -Xtune:virtualized -Xminf0.05 -Xmaxf0.1 -jar quarkus-run.jar &
+# Start the app exactly as the stock image does (WORKDIR /commafeed):
+# the native binary ./commafeed.
+cd /commafeed
+./commafeed &
 APP_PID=$!
 
-# Wait for Quarkus to answer (JVM boot is ~10-20s; allow up to 4 minutes).
+# Wait for Quarkus to answer (native boot is ~1s; allow up to 4 minutes).
 SERVER_JSON=""
 for _ in $(seq 1 120); do
     if SERVER_JSON=$(curl -fsS --max-time 5 "${BASE_URL}/rest/server/get" 2>/dev/null); then

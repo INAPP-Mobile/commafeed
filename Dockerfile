@@ -7,7 +7,9 @@
 # Pinned by manifest-list digest, digest-only FROM (Railpack 0.43.0 cannot
 # plan a FROM that carries both a tag and a digest; the digest-only form
 # builds under both the Dockerfile builder and Railpack planning).
-#   tag: 7.4.1-h2 (JVM image, Semeru JRE 25)
+#   tag: 7.4.1-h2 (NATIVE image — a single Quarkus native binary, NOT the
+#   JVM image; the -jvm tags are a separate image. Verified in the image
+#   config: Cmd ["./commafeed"], base debian trixie, no java installed.)
 #   manifest list: sha256:59b59cf87cc2ab4501dfbd05079db77b0e0a3454bd17974fb733431d866223ee
 #   amd64 manifest: sha256:5a6419e1649fab3fa22c902f96e40761b409d357c9a3515756bd314370c04585
 FROM athou/commafeed@sha256:59b59cf87cc2ab4501dfbd05079db77b0e0a3454bd17974fb733431d866223ee
@@ -18,16 +20,11 @@ FROM athou/commafeed@sha256:59b59cf87cc2ab4501dfbd05079db77b0e0a3454bd17974fb733
 USER root
 
 # The entrypoint polls the app over HTTP and seeds the admin account via the
-# initial-setup API, so it needs curl. The Semeru JRE base is Ubuntu-based.
+# initial-setup API, so it needs curl. The native image's base is Debian
+# trixie (verified in the image config history), so apt-get works.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
-
-# Cap the JVM heap so the service stays comfortable on small Railway plans.
-# Upstream's own compose example runs the JVM image under a 256M limit; the
-# Semeru -Xtune:virtualized flags in the stock CMD adapt the heap to the
-# container, and this ceiling keeps it inside a 512M service.
-ENV JAVA_TOOL_OPTIONS="-Xmx512m"
 
 # Data lives on the Railway volume: H2 database + Lucene index + uploads.
 # The stock image already declares VOLUME /commafeed/data and WORKDIR

@@ -10,7 +10,7 @@ CommaFeed is a Google Reader-inspired self-hosted RSS reader: subscribe to feeds
 
 ## About Hosting
 
-CommaFeed runs as one Java (Quarkus) service from the official JVM image, pinned by digest. The embedded H2 database, search index, and uploads live on a Railway volume (`/commafeed/data`) and survive redeploys. The heap is capped at 512 MB, so it fits comfortably on the Hobby plan with no companion services. Railway's injected `PORT` is mapped to the app port on every boot, and the healthcheck is upstream's own `/openapi` endpoint.
+CommaFeed runs as one Quarkus native-binary service from the official image, pinned by digest. The embedded H2 database, search index, and uploads live on a Railway volume (`/commafeed/data`) and survive redeploys. The native binary boots in about a second and runs comfortably in 256 MB, so it fits easily on the Hobby plan with no companion services. Railway's injected `PORT` is mapped to the app port on every boot, and the healthcheck is upstream's own `/openapi` endpoint.
 
 ## Why Deploy
 
@@ -29,7 +29,7 @@ CommaFeed runs as one Java (Quarkus) service from the official JVM image, pinned
 
 ### Deployment Dependencies
 
-- **Runtime:** single Java (Quarkus) service; heap capped at 512 MB.
+- **Runtime:** single Quarkus native-binary service; runs in ~256 MB.
 - **Port:** 8082 internally, mapped from Railway's injected `PORT`.
 - **Persistence:** one Railway volume at `/commafeed/data` (H2 database, Lucene index, uploads).
 - **Healthcheck:** `/openapi` (upstream endpoint, unauthenticated).

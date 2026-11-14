@@ -22,7 +22,7 @@ Click **Deploy on Railway** above. The deploy form has two generated fields — 
 - **Real RSS reader, not a demo:** categories, keyboard shortcuts, rules, OPML import/export, Fever and Google Reader APIs so mobile apps (NetNewsWire, Reeder, ReadKit, etc.) can connect.
 - **Always-on by design:** feeds refresh on a schedule, so the service earns its keep — and stays readable the moment you open it.
 - **Persistent:** the embedded H2 database, search index, and uploads live on a Railway volume (`/commafeed/data`) and survive redeploys.
-- **Pinned upstream:** the official `athou/commafeed:7.4.1-h2` JVM image, pinned by digest — no `:latest` drift.
+- **Pinned upstream:** the official `athou/commafeed:7.4.1-h2` native image, pinned by digest — no `:latest` drift.
 
 ## Common Use Cases
 
@@ -46,7 +46,7 @@ All other Quarkus settings can be overridden with environment variables (e.g. `C
 
 ### Deployment Dependencies
 
-- **Runtime:** single Java (Quarkus) service from the official JVM image; heap capped at 512 MB (`-Xmx512m`).
+- **Runtime:** single Quarkus native-binary service from the official image; upstream's own compose example runs it under a 256 MB limit.
 - **Port:** 8082 internally, mapped from Railway's injected `PORT`.
 - **Persistence:** one Railway volume mounted at `/commafeed/data` (H2 database, Lucene index, uploads).
 - **Healthcheck:** upstream's own `/openapi` endpoint (always included, unauthenticated, 200).
